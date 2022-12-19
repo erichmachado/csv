@@ -1589,14 +1589,21 @@ class CSV
       options.delete(:replace)
       options.delete_if {|k, _| /newline\z/.match?(k)}
 
-      begin
-        f = File.open(filename, mode, **file_opts)
-      rescue ArgumentError => e
-        raise unless /needs binmode/.match?(e.message) and mode == "r"
-        mode = "rb"
-        file_opts = {encoding: Encoding.default_external}.merge(file_opts)
-        retry
+      case filename
+      when StringIO
+        f = StringIO.open(filename.string, mode)
+        f.pos = filename.pos
+      else
+        begin
+          f = File.open(filename, mode, **file_opts)
+        rescue ArgumentError => e
+          raise unless /needs binmode/.match?(e.message) and mode == "r"
+          mode = "rb"
+          file_opts = {encoding: Encoding.default_external}.merge(file_opts)
+          retry
+        end
       end
+
       begin
         csv = new(f, **options)
       rescue Exception

@@ -63,6 +63,11 @@ class TestCSVInterfaceRead < Test::Unit::TestCase
     assert_equal(@rows, rows)
   end
 
+  def test_foreach_stringio
+    rows = CSV.foreach(StringIO.new(@data), col_sep: "\t", row_sep: "\r\n").to_a
+    assert_equal(@rows, rows)
+  end
+
   def test_closed?
     csv = CSV.open(@input.path, "r+", col_sep: "\t", row_sep: "\r\n")
     assert_not_predicate(csv, :closed?)
@@ -212,6 +217,20 @@ class TestCSVInterfaceRead < Test::Unit::TestCase
     File.binwrite(@input.path, "1,2,3\r\n" "4,5\n")
     CSV.open(@input.path, newline: :universal) do |csv|
       assert_equal(@rows, csv.to_a)
+    end
+  end
+
+  def test_open_stringio
+    CSV.open(StringIO.new(@data), col_sep: "\t", row_sep: "\r\n") do |csv|
+      assert_equal(@rows, csv.to_a)
+    end
+  end
+
+  def test_open_stringio_with_position_set
+    stringio = StringIO.new(@data)
+    stringio.pos = 7
+    CSV.open(stringio, col_sep: "\t", row_sep: "\r\n") do |csv|
+      assert_equal([["4", "5"]], csv.to_a)
     end
   end
 
